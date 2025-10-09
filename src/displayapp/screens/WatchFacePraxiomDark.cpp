@@ -166,5 +166,153 @@ WatchFacePraxiomDark::WatchFacePraxiomDark(DisplayApp* app,
   Refresh();
 }
 
-// The rest of the implementation is identical to Light theme but inherits from WatchFacePraxiomDark
-// Copy the same methods from WatchFacePraxiomLight but update class references
+WatchFacePraxiomDark::~WatchFacePraxiomDark() {
+  lv_task_del(taskRefresh);
+  lv_obj_clean(lv_scr_act());
+}
+
+void WatchFacePraxiomDark::RefreshTaskCallback(lv_task_t* task) {
+  auto* screen = static_cast<WatchFacePraxiomDark*>(task->user_data);
+  screen->Refresh();
+}
+
+void WatchFacePraxiomDark::Refresh() {
+  // Battery update
+  batteryPercentRemaining = batteryController.PercentRemaining();
+  if (batteryPercentRemaining.IsUpdated()) {
+    auto batteryPercent = batteryPercentRemaining.Get();
+    lv_label_set_text_static(batteryIcon, BatteryIcon::GetBatteryIcon(batteryPercent));
+    
+    auto color = batteryPercent > 40 ? LV_COLOR_MAKE(0x99, 0x99, 0x99) : LV_COLOR_MAKE(0xFF, 0x33, 0x33);
+    lv_obj_set_style_local_text_color(batteryIcon, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, color);
+  }
+
+  // Time and date update
+  currentDateTime = dateTimeController.CurrentDateTime();
+  if (currentDateTime.IsUpdated()) {
+    auto newDateTime = currentDateTime.Get();
+    auto dp = date::floor<date::days>(newDateTime);
+    auto time = date::make_time(newDateTime - dp);
+    auto yearMonthDay = date::year_month_day(dp);
+
+    int hour = time.hours().count();
+    auto minute = time.minutes().count();
+
+    char timeStr[6];
+    if (settingsController.GetClockType() == Controllers::Settings::ClockType::H24) {
+      sprintf(timeStr, "%02d:%02d", hour, static_cast<int>(minute));
+    } else {
+      int h12 = (hour == 0) ? 12 : ((hour > 12) ? hour - 12 : hour);
+      sprintf(timeStr, "%02d:%02d", h12, static_cast<int>(minute));
+    }
+    lv_label_set_text(label_time, timeStr);
+
+    // Update date
+    auto day = static_cast<unsigned>(yearMonthDay.day());
+    char dateStr[16];
+    sprintf(dateStr, "%s %02d %s", 
+            dateTimeController.DayOfWeekShortToString(),
+            day,
+            dateTimeController.MonthShortToString());
+    lv_label_set_text(label_date, dateStr);
+  }
+
+  // Heart rate update
+  heartbeat = heartRateController.HeartRate();
+  heartbeatRunning = heartRateController.State() != Controllers::HeartRateController::States::Stopped;
+  if (heartbeat.IsUpdated() || heartbeatRunning.IsUpdated()) {
+    if (heartbeatRunning.Get()) {
+      lastHeartRate = heartbeat.Get();
+      lv_label_set_text_fmt(heartRateValue, "%d", lastHeartRate);
+      
+      // Simulate HRV
+      hrvValue = 25 + (lastHeartRate % 20);
+      lv_label_set_text_fmt(hrvValueLabel, "%dms", hrvValue);
+    } else {
+      lv_label_set_text_static(heartRateValue, "--");
+      lv_label_set_text_static(hrvValueLabel, "--");
+    }
+  }
+
+  // Steps update
+  stepCount = motionController.NbSteps();
+  if (stepCount.IsUpdated()) {
+    lastStepCount = stepCount.Get();
+    lv_label_set_text_fmt(stepsValue, "%lu", lastStepCount);
+    
+    // Calculate activity score
+    activityScore = (lastStepCount * 100) / 10000;
+    if (activityScore > 100) activityScore = 100;
+    lv_label_set_text_fmt(activityValue, "%d%%", activityScore);
+  }
+
+  // Update health score and DNA animation
+  UpdateHealthScore();
+  AnimateDNA();
+}
+
+void WatchFacePraxiomDark::UpdateHealthScore() {
+  // Praxiom Health Algorithm
+  int score = 100;
+  
+  if (lastHeartRate > 0) {
+    if (lastHeartRate >= 60 && lastHeartRate <= 80) {
+      score += 20;
+    } else if (lastHeartRate > 100 || lastHeartRate < 50) {
+      score -= 30;
+    }
+  }
+  
+  if (activityScore >= 80) {
+    currentHealthStatus = HealthStatus::Optimal;
+  } else if (activityScore >= 60) {
+    currentHealthStatus = HealthStatus::Good;
+  } else if (activityScore >= 40) {
+    currentHealthStatus = HealthStatus::Moderate;
+  } else {
+    currentHealthStatus = HealthStatus::NeedsAttention;
+  }
+  
+  lv_label_set_text_static(healthFeedback, GetHealthFeedback());
+  lv_obj_set_style_local_text_color(healthFeedback, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, GetHealthColor());
+}
+
+void WatchFacePraxiomDark::AnimateDNA() {
+  dnaAnimationFrame = (dnaAnimationFrame + 1) % 60;
+  
+  int offset1 = 10 * sin(dnaAnimationFrame * 0.1);
+  int offset2 = 10 * cos(dnaAnimationFrame * 0.1);
+  
+  lv_obj_set_pos(dnaHelix1, 20 + offset1, 80);
+  lv_obj_set_pos(dnaHelix2, 210 + offset2, 80);
+}
+
+const char* WatchFacePraxiomDark::GetHealthFeedback() const {
+  switch (currentHealthStatus) {
+    case HealthStatus::Optimal:
+      return "OPTIMAL";
+    case HealthStatus::Good:
+      return "GOOD";
+    case HealthStatus::Moderate:
+      return "MODERATE";
+    case HealthStatus::NeedsAttention:
+      return "IMPROVE";
+    default:
+      return "CHECKING";
+  }
+}
+
+lv_color_t WatchFacePraxiomDark::GetHealthColor() const {
+  switch (currentHealthStatus) {
+    case HealthStatus::Optimal:
+      return LV_COLOR_MAKE(0x00, 0xFF, 0x99);  // Bright Green
+    case HealthStatus::Good:
+      return LV_COLOR_MAKE(0x66, 0xCC, 0xFF);  // Bright Blue
+    case HealthStatus::Moderate:
+      return LV_COLOR_MAKE(0xFF, 0xCC, 0x33);  // Bright Orange
+    case HealthStatus::NeedsAttention:
+      return LV_COLOR_MAKE(0xFF, 0x33, 0x66);  // Bright Red
+    default:
+      return LV_COLOR_MAKE(0x99, 0x99, 0x99);  // Gray
+  }
+}
