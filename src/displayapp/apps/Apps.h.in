@@ -1,82 +1,77 @@
 #pragma once
-#include <cstddef>
+
 #include <cstdint>
+#include <cstddef>
 
 namespace Pinetime {
   namespace Applications {
+    
+    // Health-focused apps only - ALL GAMES REMOVED
     enum class Apps : uint8_t {
       None,
-      Launcher,
       Clock,
       SysInfo,
       FirmwareUpdate,
       FirmwareValidation,
-      NotificationsPreview,
-      Notifications,
+      
+      // Health & Fitness Apps ONLY
+      HeartRate,
+      Steps,
+      Motion,
+      
+      // Essential Tools (No Games!)
       Timer,
       Alarm,
-      FlashLight,
-      BatteryInfo,
-      Music,
-      Paint,
-      Paddle,
-      Twos,
-      HeartRate,
-      Navigation,
       StopWatch,
-      Metronome,
-      Motion,
-      Calculator,
-      Steps,
-      Dice,
-      Weather,
-      PassKey,
-      QuickSettings,
+      
+      // Settings
       Settings,
       SettingWatchFace,
       SettingTimeFormat,
-      SettingWeatherFormat,
       SettingDisplay,
       SettingWakeUp,
       SettingSteps,
       SettingSetDateTime,
-      SettingChimes,
-      SettingShakeThreshold,
-      SettingBluetooth,
-      SettingOTA,
+      SettingSetDate,
+      SettingSetTime,
+      
+      // System
+      BatteryInfo,
+      Notifications,
+      FlashLight,
+      
       Error
     };
-
-    enum class WatchFace : uint8_t {
-      Digital,
-      Analog,
-      PineTimeStyle,
-      Terminal,
-      Infineat,
-      CasioStyleG7710,
-      PrideFlag,
+    
+    // Touch Events enum (if not defined elsewhere)
+    enum class TouchEvents : uint8_t {
+      None = 0,
+      Tap = 1,
+      SwipeLeft = 2,
+      SwipeRight = 3,
+      SwipeUp = 4,
+      SwipeDown = 5,
+      LongTap = 6,
+      DoubleTap = 7
     };
-
-    template <Apps>
-    struct AppTraits {};
-
-    template <WatchFace>
-    struct WatchFaceTraits {};
-
-    template <Apps... As>
-    struct TypeList {
-      static constexpr size_t Count = sizeof...(As);
+    
+    // Health metrics structure for Praxiom algorithm
+    struct HealthMetrics {
+      uint8_t heartRate;
+      uint8_t hrvMs;          // Heart rate variability in milliseconds
+      uint32_t steps;
+      uint16_t activeMinutes;
+      uint8_t stressLevel;    // 0-100 calculated stress
+      uint8_t recoveryScore;  // 0-100 recovery score
     };
-
-    using UserAppTypes = TypeList<@USERAPP_TYPES@>;
-
-    template <WatchFace... Ws>
-    struct WatchFaceTypeList {
-      static constexpr size_t Count = sizeof...(Ws);
+    
+    // Praxiom Health Status
+    enum class PraxiomHealthStatus : uint8_t {
+      Optimal,      // All metrics excellent
+      Good,         // Most metrics good
+      Moderate,     // Some improvement needed
+      Attention,    // Needs attention
+      Alert         // Health alert condition
     };
-
-    using UserWatchFaceTypes = WatchFaceTypeList<@WATCHFACE_TYPES@>;
-
-    static_assert(UserWatchFaceTypes::Count >= 1);
   }
 }
