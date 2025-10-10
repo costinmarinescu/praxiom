@@ -13,16 +13,20 @@ namespace Pinetime {
       SysInfo,
       FirmwareUpdate,
       FirmwareValidation,
+      NotificationsPreview,
+      Notifications,
+      FlashLight,
+      BatteryInfo,
       
       // Health & Fitness Apps ONLY
       HeartRate,
-      Steps,
       Motion,
+      Steps,
       
       // Essential Tools (No Games!)
+      StopWatch,
       Timer,
       Alarm,
-      StopWatch,
       
       // Settings
       Settings,
@@ -34,44 +38,21 @@ namespace Pinetime {
       SettingSetDateTime,
       SettingSetDate,
       SettingSetTime,
+      SettingChimes,
+      SettingShakeThreshold,
+      SettingBluetooth,
+      SettingBatteryHistory,
       
-      // System
-      BatteryInfo,
-      Notifications,
-      FlashLight,
+      // Music and Navigation (optional, remove if not needed)
+      Music,
+      Navigation,
+      
+      // Weather
+      Weather,
+      
+      // NO GAMES - Paddle, Twos, Paint, Metronome, Calculator REMOVED
       
       Error
-    };
-    
-    // Touch Events enum (if not defined elsewhere)
-    enum class TouchEvents : uint8_t {
-      None = 0,
-      Tap = 1,
-      SwipeLeft = 2,
-      SwipeRight = 3,
-      SwipeUp = 4,
-      SwipeDown = 5,
-      LongTap = 6,
-      DoubleTap = 7
-    };
-    
-    // Health metrics structure for Praxiom algorithm
-    struct HealthMetrics {
-      uint8_t heartRate;
-      uint8_t hrvMs;          // Heart rate variability in milliseconds
-      uint32_t steps;
-      uint16_t activeMinutes;
-      uint8_t stressLevel;    // 0-100 calculated stress
-      uint8_t recoveryScore;  // 0-100 recovery score
-    };
-    
-    // Praxiom Health Status
-    enum class PraxiomHealthStatus : uint8_t {
-      Optimal,      // All metrics excellent
-      Good,         // Most metrics good
-      Moderate,     // Some improvement needed
-      Attention,    // Needs attention
-      Alert         // Health alert condition
     };
   }
 }
