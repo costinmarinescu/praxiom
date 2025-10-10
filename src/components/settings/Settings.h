@@ -58,43 +58,15 @@ namespace Pinetime {
         Pink = 17
       };
       
-      enum class PTSGaugeStyle : uint8_t {
-        Full = 0,
-        Half = 1,
-        Numeric = 2
-      };
-      
-      enum class PTSWeather : uint8_t {
-        On = 0,
-        Off = 1
+      enum class ClockType : uint8_t {
+        H24 = 0,
+        H12 = 1
       };
       
       struct PineTimeStyle {
         Colors ColorTime = Colors::Teal;
         Colors ColorBar = Colors::Teal;
         Colors ColorBG = Colors::Black;
-        PTSGaugeStyle gaugeStyle = PTSGaugeStyle::Full;
-        PTSWeather weatherEnable = PTSWeather::Off;
-      };
-      
-      // Praxiom Health Goals
-      struct HealthGoals {
-        uint16_t dailySteps = 10000;
-        uint16_t dailyActiveMinutes = 30;
-        uint16_t weeklyWorkouts = 3;
-        uint8_t targetHeartRateMin = 60;
-        uint8_t targetHeartRateMax = 100;
-        uint8_t targetHRV = 40;  // milliseconds
-      };
-      
-      // Praxiom Health Settings
-      struct PraxiomSettings {
-        bool continuousHRMonitoring = false;
-        bool hrvTracking = true;
-        bool activityReminders = true;
-        bool healthAlerts = true;
-        uint8_t reminderInterval = 60;  // minutes
-        bool cloudSync = false;
       };
       
       Settings(Pinetime::Controllers::FS& fs);
@@ -116,24 +88,6 @@ namespace Pinetime {
       
       ClockFace GetClockFace() const {
         return settings.clockFace;
-      }
-      
-      void SetHealthGoals(const HealthGoals& goals) {
-        settings.healthGoals = goals;
-        settingsChanged = true;
-      }
-      
-      const HealthGoals& GetHealthGoals() const {
-        return settings.healthGoals;
-      }
-      
-      void SetPraxiomSettings(const PraxiomSettings& praxiom) {
-        settings.praxiomSettings = praxiom;
-        settingsChanged = true;
-      }
-      
-      const PraxiomSettings& GetPraxiomSettings() const {
-        return settings.praxiomSettings;
       }
 
       void SetTimeFormat(ClockType clockType) {
@@ -215,9 +169,6 @@ namespace Pinetime {
           settingsChanged = true;
         }
         settings.wakeUpMode.set(static_cast<size_t>(wakeUp), enabled);
-        if (wakeUp == WakeUpMode::RaiseWrist) {
-          settings.raiseWristSensitivity = sensitivity;
-        }
       }
       
       std::bitset<5> getWakeUpModes() const {
@@ -255,17 +206,6 @@ namespace Pinetime {
         return settingsMenu;
       }
 
-      void SetClockType(ClockType clockType) {
-        if (clockType != settings.clockType) {
-          settingsChanged = true;
-        }
-        settings.clockType = clockType;
-      }
-      
-      ClockType GetClockType() const {
-        return settings.clockType;
-      }
-
       void SetPTSColorTime(Colors colorTime) {
         if (colorTime != settings.PTS.ColorTime)
           settingsChanged = true;
@@ -296,26 +236,6 @@ namespace Pinetime {
         return settings.PTS.ColorBG;
       }
 
-      void SetPTSGaugeStyle(PTSGaugeStyle gaugeStyle) {
-        if (gaugeStyle != settings.PTS.gaugeStyle)
-          settingsChanged = true;
-        settings.PTS.gaugeStyle = gaugeStyle;
-      }
-      
-      PTSGaugeStyle GetPTSGaugeStyle() const {
-        return settings.PTS.gaugeStyle;
-      }
-
-      void SetPTSWeather(PTSWeather weatherEnable) {
-        if (weatherEnable != settings.PTS.weatherEnable)
-          settingsChanged = true;
-        settings.PTS.weatherEnable = weatherEnable;
-      }
-      
-      PTSWeather GetPTSWeather() const {
-        return settings.PTS.weatherEnable;
-      }
-
       void SetInfineatShowSideCover(bool show) {
         if (show != settings.watchFaceInfineat.showSideCover) {
           settings.watchFaceInfineat.showSideCover = show;
@@ -337,11 +257,6 @@ namespace Pinetime {
       uint8_t GetInfineatColorIndex() const {
         return settings.watchFaceInfineat.colorIndex;
       }
-
-      enum class ClockType : uint8_t {
-        H24 = 0,
-        H12 = 1
-      };
 
     private:
       Pinetime::Controllers::FS& fs;
@@ -365,10 +280,6 @@ namespace Pinetime {
         uint16_t shakeWakeThreshold = 150;
         Controllers::BrightnessController::Levels brightLevel = Controllers::BrightnessController::Levels::Medium;
         
-        // Health-specific settings
-        HealthGoals healthGoals;
-        PraxiomSettings praxiomSettings;
-        
         struct WatchFaceInfineat {
           bool showSideCover = true;
           int colorIndex = 0;
@@ -379,7 +290,6 @@ namespace Pinetime {
         bool bleRadioEnabled = true;
         uint8_t appMenu = 0;
         uint8_t settingsMenu = 0;
-        uint8_t raiseWristSensitivity = 1;
       };
       
       SettingsData settings;
@@ -387,7 +297,6 @@ namespace Pinetime {
       
       uint8_t appMenu = 0;
       uint8_t settingsMenu = 0;
-      uint8_t sensitivity = 1;
 
       void LoadSettingsFromFile();
       void SaveSettingsToFile();
