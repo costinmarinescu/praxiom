@@ -1,53 +1,48 @@
+// File: src/displayapp/screens/settings/SettingWatchFace.h
+
 #pragma once
 
 #include <array>
 #include <cstdint>
-#include <lvgl/lvgl.h>
+#include <memory>
 
+#include "displayapp/screens/Screen.h"
 #include "displayapp/screens/ScreenList.h"
 #include "components/settings/Settings.h"
-#include "displayapp/screens/Screen.h"
-#include "displayapp/screens/Symbols.h"
-#include "displayapp/screens/CheckboxList.h"
-#include "displayapp/screens/WatchFaceInfineat.h"
-#include "displayapp/screens/WatchFaceCasioStyleG7710.h"
 
 namespace Pinetime {
+  namespace Controllers {
+    class Settings;
+    class FS;
+  }
 
   namespace Applications {
     namespace Screens {
-
       class SettingWatchFace : public Screen {
       public:
-        struct Item {
-          const char* name;
-          WatchFace watchface;
-          bool enabled;
-        };
-
         SettingWatchFace(DisplayApp* app,
-                         std::array<Item, UserWatchFaceTypes::Count>&& watchfaceItems,
-                         Pinetime::Controllers::Settings& settingsController,
-                         Pinetime::Controllers::FS& filesystem);
+                        Pinetime::Controllers::Settings& settingsController,
+                        Pinetime::Controllers::FS& filesystem);
         ~SettingWatchFace() override;
 
         bool OnTouchEvent(TouchEvents event) override;
 
       private:
-        auto CreateScreenList() const;
-        std::unique_ptr<Screen> CreateScreen(unsigned int screenNum) const;
+        struct Option {
+          const char* name;
+          uint32_t value;
+          bool enabled = true;
+        };
 
-        static constexpr int settingsPerScreen = 4;
-        std::array<Item, UserWatchFaceTypes::Count> watchfaceItems;
-        static constexpr int nScreens = UserWatchFaceTypes::Count > 0 ? (UserWatchFaceTypes ::Count - 1) / settingsPerScreen + 1 : 1;
-
-        Controllers::Settings& settingsController;
+        Pinetime::Controllers::Settings& settingsController;
         Pinetime::Controllers::FS& filesystem;
 
-        static constexpr const char* title = "Watch face";
-        static constexpr const char* symbol = Symbols::home;
+        // Only 2 watch faces now
+        static constexpr std::array<Option, 2> options;
 
-        ScreenList<nScreens> screens;
+        std::unique_ptr<Screen> CreateScreen();
+
+        ScreenList<1> screens;  // Only 1 screen needed for 2 watch faces
       };
     }
   }
